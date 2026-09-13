@@ -1,0 +1,31 @@
+.citizen-track-page { min-height: calc(100svh - 73px); padding: 60px 16px; background: #f5f8fc; color: #132943; font-family: Arial, sans-serif; text-align: left; }
+.citizen-track-card { width: min(100%, 700px); margin: 0 auto; padding: 38px; border-top: 4px solid #ef6547; border-radius: 12px; background: #fff; box-shadow: 0 10px 28px rgb(19 41 67 / 10%); }
+.track-icon { display: grid; width: 48px; height: 48px; place-items: center; border-radius: 10px; color: #ef6547; background: #fff0eb; font-size: 21px; }
+.track-label { margin: 22px 0 9px; color: #ef6547; font-size: 12px; font-weight: 700; letter-spacing: 1.3px; text-transform: uppercase; }
+.citizen-track-card h1 { margin: 0; color: #132943; font-family: Georgia, 'Times New Roman', serif; font-size: 38px; letter-spacing: 0; }
+.track-intro { margin: 10px 0 27px; color: #71859a; font-size: 15px; line-height: 1.5; }
+.track-form { display: flex; align-items: end; gap: 12px; }
+.track-form label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.track-form input { flex: 1; min-width: 0; height: 48px; padding: 12px 15px; border: 1px solid #d9e3ed; border-radius: 7px; color: #132943; background: #fff; font: inherit; font-size: 15px; }
+.track-form input:focus { outline: 3px solid rgb(239 101 71 / 18%); border-color: #ef6547; }
+.track-form button { display: inline-flex; height: 48px; align-items: center; gap: 9px; padding: 0 18px; border: 0; border-radius: 7px; color: #fff; background: #ef6547; font: inherit; font-size: 14px; font-weight: 700; white-space: nowrap; cursor: pointer; }
+.track-form button:hover { background: #d85439; }
+.track-form button:disabled { cursor: wait; opacity: .7; }
+.tracked-complaint { margin-top: 30px; padding: 22px; border: 1px solid #dce6ee; border-radius: 9px; background: #fbfdff; }
+.tracked-header { display: flex; align-items: flex-start; justify-content: space-between; gap: 15px; padding-bottom: 17px; border-bottom: 1px solid #e0e8f0; }
+.tracked-id { color: #ef6547; font-size: 12px; font-weight: 700; letter-spacing: .8px; }
+.tracked-header h2 { margin: 7px 0 0; color: #132943; font-family: Arial, sans-serif; font-size: 20px; letter-spacing: 0; }
+.tracked-status { padding: 7px 10px; border-radius: 20px; color: #008e9b; background: #e4fbfd; font-size: 11px; font-weight: 700; }
+.tracked-details { display: grid; grid-template-columns: repeat(2, 1fr); gap: 17px; padding-top: 19px; }
+.tracked-details p { display: grid; gap: 4px; margin: 0; color: #526d87; font-size: 14px; }
+.tracked-details strong { color: #8a9aaa; font-size: 11px; letter-spacing: .5px; text-transform: uppercase; }
+.tracked-description { grid-column: 1 / -1; line-height: 1.5; }
+.assigned-worker { display: flex; align-items: center; gap: 12px; margin-top: 20px; padding: 14px; border-radius: 8px; color: #315c4a; background: #f1faf5; }
+.worker-avatar { display: grid; width: 35px; height: 35px; flex: 0 0 35px; place-items: center; border-radius: 50%; color: #fff; background: #30b783; }
+.assigned-worker strong, .assigned-worker span { display: block; }
+.assigned-worker strong { color: #6b8b7c; font-size: 11px; text-transform: uppercase; }
+.assigned-worker span { margin-top: 3px; color: #315c4a; font-size: 14px; font-weight: 700; }
+.assigned-worker a { margin-left: auto; color: #208861; font-size: 13px; font-weight: 700; text-decoration: none; }
+.back-to-citizen { display: inline-flex; align-items: center; gap: 8px; margin-top: 27px; color: #526d87; font-size: 13px; text-decoration: none; }
+.back-to-citizen:hover { color: #ef6547; }
+@media (max-width: 600px) { .citizen-track-page { padding: 25px 12px; } .citizen-track-card { padding: 25px 18px; } .citizen-track-card h1 { font-size: 32px; } .track-form { align-items: stretch; flex-direction: column; } .track-form button { justify-content: center; } .tracked-header { flex-direction: column; } .tracked-details { grid-template-columns: 1fr; } .tracked-description { grid-column: auto; } }

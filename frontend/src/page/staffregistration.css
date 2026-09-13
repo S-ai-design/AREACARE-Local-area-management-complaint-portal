@@ -1,0 +1,229 @@
+.staff-registration-page {
+  min-height: calc(100svh - 73px);
+  padding: 12px 2px 24px;
+  background: #f4f8fb;
+  color: #10243e;
+  font-family: Arial, sans-serif;
+  text-align: left;
+}
+
+.staff-registration-card {
+  width: min(100%, 804px);
+  margin: 0 auto;
+  padding: 28px 26px 24px;
+  border-top: 5px solid #ff9d00;
+  border-radius: 13px;
+  background: #fff;
+  box-shadow: 0 3px 8px rgb(16 36 62 / 18%);
+}
+
+.staff-registration-header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px 28px;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.staff-registration-header .staff-portal-heading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.staff-registration-header .staff-portal-icon {
+  color: #ff9d00;
+  font-size: 27px;
+}
+
+.staff-registration-header h1,
+.staff-registration-copy h2 {
+  margin: 0;
+  color: #10243e;
+  font-family: Arial, sans-serif;
+  letter-spacing: 0;
+}
+
+.staff-registration-header h1 {
+  font-size: 26px;
+  line-height: 1.2;
+}
+
+.staff-registration-header p,
+.staff-registration-copy p {
+  color: #6a819b;
+}
+
+.staff-registration-header p {
+  margin: 9px 0 0;
+  font-size: 15px;
+}
+
+.staff-registration-header .staff-portal-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.staff-registration-header .staff-portal-tab {
+  padding: 12px 24px;
+  border: 1px solid #dce5ee;
+  border-radius: 7px;
+  color: #10243e;
+  font-size: 16px;
+  font-weight: 700;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.staff-registration-header .staff-portal-tab-active {
+  border-color: #2864e8;
+  background: #2864e8;
+  color: #fff;
+}
+
+.staff-registration-header .staff-portal-tab-active:hover,
+.staff-registration-form .open-console-button:hover {
+  background: #1d50c4;
+}
+
+.staff-login-divider {
+  height: 2px;
+  margin: 14px 0 30px;
+  background: #dce5ee;
+}
+
+.staff-registration-copy h2 {
+  font-size: 24px;
+  line-height: 1.25;
+}
+
+.staff-registration-copy p {
+  margin: 9px 0 26px;
+  font-size: 16px;
+}
+
+.staff-registration-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 17px 16px;
+}
+
+.registration-field {
+  display: grid;
+  gap: 8px;
+}
+
+.registration-field-wide {
+  grid-column: 1 / -1;
+}
+
+.registration-field label {
+  color: #10243e;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.registration-field label span {
+  color: #ff9d00;
+}
+
+.registration-field input,
+.registration-field select {
+  width: 100%;
+  min-height: 48px;
+  padding: 10px 16px;
+  border: 1px solid #d7e2ed;
+  border-radius: 7px;
+  color: #10243e;
+  background: #fff;
+  font: inherit;
+  font-size: 16px;
+}
+
+.registration-field input::placeholder {
+  color: #8291a1;
+  opacity: 1;
+}
+
+.registration-field input:focus-visible,
+.registration-field select:focus-visible,
+.registration-back-link:focus-visible,
+.staff-registration-form .open-console-button:focus-visible {
+  outline: 3px solid rgb(40 100 232 / 30%);
+  outline-offset: 2px;
+}
+
+.registration-actions {
+  display: flex;
+  grid-column: 1 / -1;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  margin-top: 8px;
+}
+
+.registration-back-link {
+  color: #2864e8;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.staff-registration-form .open-console-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  min-height: 54px;
+  padding: 12px 24px;
+  border: 0;
+  border-radius: 7px;
+  color: #fff;
+  background: #2864e8;
+  font: inherit;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (max-width: 650px) {
+  .staff-registration-page {
+    padding: 12px 10px;
+  }
+
+  .staff-registration-card {
+    padding: 22px 16px 18px;
+  }
+
+  .staff-registration-header .staff-portal-tabs,
+  .staff-registration-header .staff-portal-tab {
+    width: 100%;
+  }
+
+  .staff-registration-header .staff-portal-tab {
+    text-align: center;
+  }
+
+  .staff-login-divider {
+    margin: 22px 0 24px;
+  }
+
+  .staff-registration-form {
+    grid-template-columns: 1fr;
+  }
+
+  .registration-field-wide,
+  .registration-actions {
+    grid-column: auto;
+  }
+
+  .registration-actions {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .staff-registration-form .open-console-button {
+    width: 100%;
+  }
+}

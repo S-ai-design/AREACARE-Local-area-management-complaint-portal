@@ -1,0 +1,76 @@
+.citizen-page {
+  min-height: calc(100svh - 73px);
+  padding: 38px 18px 64px;
+  background: #f5f8fc;
+  color: #132943;
+  font-family: Arial, sans-serif;
+  text-align: left;
+}
+
+.citizen-shell { width: min(100%, 1020px); margin: 0 auto; }
+.citizen-intro { padding: 8px 4px 28px; }
+.citizen-badge { display: inline-flex; gap: 8px; align-items: center; color: #ef6547; font-size: 12px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; }
+.citizen-intro h1 { margin: 13px 0 7px; color: #132943; font-family: Arial, sans-serif; font-size: 38px; font-weight: 700; letter-spacing: 0; line-height: 1.1; }
+.citizen-intro > p { margin: 0; color: #6e8298; font-size: 17px; }
+.citizen-help-row { display: flex; flex-wrap: wrap; gap: 20px; margin-top: 21px; color: #526d87; font-size: 13px; }
+.citizen-help-row span { display: inline-flex; align-items: center; gap: 7px; }
+.citizen-help-row i { color: #ef6547; }
+.complaint-form { padding: 32px; border: 1px solid #e0e8f0; border-radius: 12px; background: #fff; box-shadow: 0 8px 25px rgb(19 41 67 / 8%); }
+.form-section-heading { display: flex; align-items: flex-start; gap: 14px; padding-bottom: 22px; border-bottom: 1px solid #e7edf3; }
+.section-number { color: #ef6547; font-size: 13px; font-weight: 700; letter-spacing: 1px; }
+.form-section-heading h2 { margin: 0; color: #132943; font-family: Arial, sans-serif; font-size: 21px; letter-spacing: 0; }
+.form-section-heading p { margin: 5px 0 0; color: #7a8da1; font-size: 14px; }
+.form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 18px; padding: 25px 0 32px; }
+.address-heading { grid-column: 1 / -1; margin-top: 2px; margin-bottom: -5px; color: #526d87; font-size: 13px; font-weight: 700; letter-spacing: .5px; text-transform: uppercase; }
+.address-heading i { margin-right: 7px; color: #ef6547; }
+.map-field { display: grid; gap: 10px; }
+.map-field-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.map-field-heading label { color: #233c57; font-size: 14px; font-weight: 700; }
+.map-field-heading p { margin: 4px 0 0; color: #7a8da1; font-size: 12px; }
+.map-button { display: inline-flex; align-items: center; gap: 8px; padding: 9px 13px; border: 1px solid #ef6547; border-radius: 6px; color: #ef6547; background: #fff; font: inherit; font-size: 13px; font-weight: 700; cursor: pointer; }
+.map-button:hover { color: #fff; background: #ef6547; }
+.map-preview { min-height: 190px; overflow: hidden; border: 1px solid #d9e3ed; border-radius: 8px; background: #f3f7fa; }
+.map-preview iframe { display: block; width: 100%; height: 230px; border: 0; }
+.map-empty { display: grid; min-height: 190px; place-items: center; align-content: center; gap: 9px; color: #8a9bad; font-size: 13px; }
+.map-empty i { color: #ef6547; font-size: 26px; }
+.citizen-field { display: grid; gap: 8px; }
+.field-wide { grid-column: 1 / -1; }
+.citizen-field label { color: #233c57; font-size: 14px; font-weight: 700; }
+.citizen-field label span { color: #ef6547; }
+.citizen-field label small { color: #8a9bad; font-size: 12px; font-weight: 400; }
+.citizen-field input, .citizen-field select, .citizen-field textarea { width: 100%; padding: 12px 14px; border: 1px solid #d9e3ed; border-radius: 7px; outline: none; color: #132943; background: #fff; font: inherit; font-size: 15px; transition: border-color .2s, box-shadow .2s; }
+.citizen-field input, .citizen-field select { min-height: 46px; }
+.citizen-field textarea { resize: vertical; line-height: 1.5; }
+.citizen-field input::placeholder, .citizen-field textarea::placeholder { color: #99a8b7; }
+.citizen-field input:focus, .citizen-field select:focus, .citizen-field textarea:focus { border-color: #ef6547; box-shadow: 0 0 0 3px rgb(239 101 71 / 14%); }
+.input-with-icon { position: relative; }
+.input-with-icon i { position: absolute; top: 15px; left: 15px; z-index: 1; color: #ef6547; font-size: 14px; }
+.input-with-icon input { padding-left: 39px; }
+.upload-box { display: grid; min-height: 88px; place-items: center; align-content: center; gap: 5px; border: 1px dashed #c9d8e5; border-radius: 8px; color: #59748e !important; background: #fbfdff; cursor: pointer; font-weight: 600 !important; }
+.upload-box i { color: #ef6547; font-size: 21px; }
+.upload-box small { color: #9aa9b7; font-size: 12px; font-weight: 400; }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; clip-path: inset(50%); }
+.contact-heading { padding-top: 28px; }
+.contact-grid { padding-bottom: 28px; }
+.complaint-actions { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding-top: 22px; border-top: 1px solid #e7edf3; }
+.complaint-actions p { margin: 0; color: #8393a2; font-size: 12px; }
+.complaint-actions p i { margin-right: 6px; color: #6da285; }
+.complaint-action-buttons { display: flex; gap: 10px; }
+.complaint-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 50px; padding: 12px 24px; border: 0; border-radius: 7px; color: #fff; background: #ef6547; font: inherit; font-size: 15px; font-weight: 700; cursor: pointer; }
+.complaint-actions .clear-form-button { border: 1px solid #d8e1e8; color: #526d87; background: #fff; }
+.complaint-actions .clear-form-button:hover { border-color: #ef6547; color: #ef6547; background: #fff8f5; }
+.complaint-actions button:hover { background: #d85439; }
+.complaint-actions button:disabled { cursor: wait; opacity: .7; }
+.complaint-actions button:focus-visible, .upload-box:focus-within { outline: 3px solid rgb(239 101 71 / 25%); outline-offset: 2px; }
+@media (max-width: 650px) {
+  .citizen-page { padding: 24px 12px 40px; }
+  .citizen-intro h1 { font-size: 31px; }
+  .complaint-form { padding: 22px 17px; }
+  .form-grid { grid-template-columns: 1fr; }
+  .field-wide { grid-column: auto; }
+  .complaint-actions { align-items: stretch; flex-direction: column; }
+  .complaint-action-buttons { flex-direction: column-reverse; }
+  .complaint-actions button { width: 100%; }
+  .map-field-heading { align-items: stretch; flex-direction: column; }
+  .map-button { justify-content: center; }
+}
