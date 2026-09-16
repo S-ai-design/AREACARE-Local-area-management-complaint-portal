@@ -1,10 +1,11 @@
 import './Homepage.css'
 import { Link } from 'react-router-dom'
+import indiaHero from '../assets/india_hero.jpg'
 
 function Homepage() {
   return (
     <main className="homepage">
-      <section className="home-hero" aria-labelledby="home-title">
+      <section className="home-hero" aria-labelledby="home-title" style={{ backgroundImage: `linear-gradient(90deg, rgb(12 29 39 / 88%) 0%, rgb(12 29 39 / 64%) 48%, rgb(12 29 39 / 38%) 100%), url(${indiaHero})` }}>
         <div className="home-hero-content">
           <p className="home-eyebrow"><i className="fa-solid fa-location-dot" aria-hidden="true" /> AreaCare / civic response</p>
           <h1 id="home-title">Report.<br /><em>Resolve</em><br />Improve.</h1>

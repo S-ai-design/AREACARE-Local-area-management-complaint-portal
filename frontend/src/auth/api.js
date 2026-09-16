@@ -6,8 +6,20 @@ export function getCsrfToken() {
   return document.cookie.split('; ').find((cookie) => cookie.startsWith('csrftoken='))?.split('=')[1] || ''
 }
 
-export async function ensureCsrfCookie() {
-  await fetch(`${API_BASE_URL}/api/auth/session/`, { credentials: 'include' })
+let csrfPromise = null
+
+export async function ensureCsrfCookie(force = false) {
+  if (!force && getCsrfToken()) {
+    return
+  }
+  if (!csrfPromise) {
+    csrfPromise = fetch(`${API_BASE_URL}/api/auth/session/`, { credentials: 'include' })
+      .catch(() => {})
+      .finally(() => {
+        csrfPromise = null
+      })
+  }
+  await csrfPromise
 }
 
 export async function apiFetch(path, options = {}) {

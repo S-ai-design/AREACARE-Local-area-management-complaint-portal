@@ -103,6 +103,76 @@
   font-size: 16px;
 }
 
+.registration-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.registration-header-row .quick-demo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border: 1px solid #bfdbfe;
+  border-radius: 7px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 4px;
+}
+
+.registration-header-row .quick-demo-badge:hover {
+  background: #dbeafe;
+  border-color: #93c5fd;
+  color: #1e40af;
+}
+
+.registration-header-row .quick-demo-badge:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.reg-password-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.reg-password-wrapper input {
+  padding-right: 48px;
+}
+
+.toggle-reg-password-button {
+  position: absolute;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #6a819b;
+  cursor: pointer;
+  font-size: 16px;
+  transition: color 0.15s ease;
+}
+
+.toggle-reg-password-button:hover {
+  color: #2864e8;
+}
+
+.toggle-reg-password-button:focus-visible {
+  outline: 2px solid rgb(40 100 232 / 40%);
+}
+
 .staff-registration-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -144,6 +214,31 @@
 .registration-field input::placeholder {
   color: #8291a1;
   opacity: 1;
+}
+
+body.dark-mode .reg-password-wrapper input {
+  border-color: #40516b;
+  color: #edf4fb;
+  background: #202e43;
+}
+
+body.dark-mode .toggle-reg-password-button {
+  color: #94a3b8;
+}
+
+body.dark-mode .toggle-reg-password-button:hover {
+  color: #60a5fa;
+}
+
+body.dark-mode .registration-header-row .quick-demo-badge {
+  background: #1e293b;
+  border-color: #1e40af;
+  color: #93c5fd;
+}
+
+body.dark-mode .registration-header-row .quick-demo-badge:hover {
+  background: #1e3a8a;
+  border-color: #2563eb;
 }
 
 .registration-field input:focus-visible,

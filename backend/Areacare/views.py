@@ -100,6 +100,7 @@ def admin_login(request):
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@ensure_csrf_cookie
 def staff_register(request):
 	data = request.data
 	username = str(data.get('username', '')).strip()
@@ -122,8 +123,8 @@ def staff_register(request):
 			account.is_staff = True
 			account.save(update_fields=['is_staff'])
 			FieldStaff.objects.create(account=account, full_name=name, phone=phone, department=department)
-	except Exception:
-		return Response({'error': 'Staff account could not be created.'}, status=status.HTTP_400_BAD_REQUEST)
+	except Exception as exc:
+		return Response({'error': f'Staff account could not be created: {str(exc)}'}, status=status.HTTP_400_BAD_REQUEST)
 	return Response({'message': 'Staff account created successfully.'}, status=status.HTTP_201_CREATED)
 
 

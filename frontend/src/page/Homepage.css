@@ -1,5 +1,5 @@
 .homepage { min-height: calc(100svh - 73px); background: #f5f4f0; color: #182b3a; font-family: Arial, sans-serif; text-align: left; }
-.home-hero { position: relative; display: flex; min-height: 570px; align-items: flex-end; overflow: hidden; padding: 78px max(6vw, 28px) 68px; background: linear-gradient(90deg, rgb(12 29 39 / 88%) 0%, rgb(12 29 39 / 64%) 48%, rgb(12 29 39 / 38%) 100%), url('https://images.unsplash.com/photo-1477959858617-67f85cf4f1df?auto=format&fit=crop&w=1800&q=85') center / cover; }
+.home-hero { position: relative; display: flex; min-height: 570px; align-items: flex-end; overflow: hidden; padding: 78px max(6vw, 28px) 68px; background-color: #0c1d27; background-size: cover; background-position: center; }
 .home-hero::after { position: absolute; right: -7%; bottom: -42%; width: 55%; height: 80%; border: 1px solid rgb(239 113 67 / 32%); border-radius: 50%; content: ''; }
 .home-hero-content { position: relative; z-index: 1; max-width: 620px; }
 .home-eyebrow, .section-label { color: #f18456; font-size: 12px; font-weight: 700; letter-spacing: 1.6px; text-transform: uppercase; }

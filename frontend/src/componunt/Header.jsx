@@ -60,7 +60,7 @@ const Header = () => {
               </Link>
             </li>
              <li className="nav-item">
-              <Link className= {`nav-link  ${isActive('/staff login')}`} to="/stafflogin">
+              <Link className= {`nav-link  ${isActive('/stafflogin')}`} to="/stafflogin">
                 Staff Login
                 <i className="fa-solid fa-user me-1" > </i>
                 

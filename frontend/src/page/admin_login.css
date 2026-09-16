@@ -144,6 +144,127 @@
   opacity: 1;
 }
 
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 13px;
+}
+
+.password-input-wrapper input {
+  margin-bottom: 0;
+  padding-right: 48px;
+}
+
+.toggle-password-button {
+  position: absolute;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: #6a819b;
+  cursor: pointer;
+  font-size: 16px;
+  transition: color 0.15s ease;
+}
+
+.toggle-password-button:hover {
+  color: #f54245;
+}
+
+.toggle-password-button:focus-visible {
+  outline: 2px solid rgb(245 66 69 / 40%);
+}
+
+.form-secondary-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 2px 0 16px;
+}
+
+.remember-me-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #52677e;
+  cursor: pointer;
+  user-select: none;
+}
+
+.remember-me-label input[type="checkbox"] {
+  width: 17px;
+  min-height: 17px;
+  height: 17px;
+  margin: 0;
+  cursor: pointer;
+  accent-color: #f54245;
+}
+
+.quick-demo-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 6px;
+  background: #fef2f2;
+  color: #dc2626;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.quick-demo-badge:hover {
+  background: #fee2e2;
+  border-color: #f87171;
+  color: #b91c1c;
+}
+
+.quick-demo-badge:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+body.dark-mode .password-input-wrapper input {
+  border-color: #40516b;
+  color: #edf4fb;
+  background: #202e43;
+}
+
+body.dark-mode .toggle-password-button {
+  color: #94a3b8;
+}
+
+body.dark-mode .toggle-password-button:hover {
+  color: #f87171;
+}
+
+body.dark-mode .remember-me-label {
+  color: #cbd5e1;
+}
+
+body.dark-mode .quick-demo-badge {
+  background: #2d1e27;
+  border-color: #7f1d1d;
+  color: #fca5a5;
+}
+
+body.dark-mode .quick-demo-badge:hover {
+  background: #3f222e;
+  border-color: #991b1b;
+}
+
 .login-actions {
   display: flex;
   align-items: center;

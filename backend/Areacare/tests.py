@@ -66,3 +66,24 @@ class AuthenticationFlowTests(TestCase):
 
 		self.client.post(reverse('auth-logout'))
 		self.assertEqual(self.client.get(reverse('auth-session')).status_code, 401)
+
+	def test_staff_registration_flow(self):
+		register_payload = {
+			'fullName': 'Water Officer',
+			'username': 'water-staff',
+			'email': 'water@example.com',
+			'phone': '9876543220',
+			'department': 'water',
+			'password': 'Staff-password-123',
+		}
+		response = self.client.post(reverse('staff-register'), register_payload, content_type='application/json')
+		self.assertEqual(response.status_code, 201)
+		self.assertEqual(response.json()['message'], 'Staff account created successfully.')
+
+		# Test login with the newly created staff
+		login_response = self.client.post(reverse('staff-login'), {
+			'username': 'water-staff',
+			'password': 'Staff-password-123',
+		}, content_type='application/json')
+		self.assertEqual(login_response.status_code, 200)
+		self.assertEqual(self.client.get(reverse('auth-session')).json()['role'], 'staff')
