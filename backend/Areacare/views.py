@@ -531,8 +531,18 @@ def admin_dashboard(request):
 @ensure_csrf_cookie
 @transaction.atomic
 def complaint_detail(request, complaint_id):
-	if request.method == 'PATCH' and not (require_staff(request) or require_admin(request)):
-		return Response({'error': 'Staff authorization required.'}, status=status.HTTP_401_UNAUTHORIZED)
+	if request.method == 'PATCH':
+		if not request.user.is_authenticated:
+			return Response({'error': 'Authentication required.'}, status=status.HTTP_401_UNAUTHORIZED)
+		if request.user.is_superuser:
+			pass
+		elif request.user.is_staff:
+			try:
+				request.user.field_staff_profile
+			except FieldStaff.DoesNotExist:
+				return Response({'error': 'Staff authorization required.'}, status=status.HTTP_403_FORBIDDEN)
+		else:
+			return Response({'error': 'Staff authorization required.'}, status=status.HTTP_403_FORBIDDEN)
 
 	try:
 		record_id = int(complaint_id.rsplit('-', 1)[-1])
@@ -546,8 +556,15 @@ def complaint_detail(request, complaint_id):
 		except FieldStaff.DoesNotExist:
 			staff_profile = None
 	if request.method == 'GET':
-		# Allow viewing complaint details for citizen tracking, staff, and admin
-		pass
+		citizen_id = request.session.get('citizen_id')
+		if citizen_id:
+			if str(record.User_id) != str(citizen_id):
+				return Response({'error': 'You do not have access to this complaint.'}, status=status.HTTP_401_UNAUTHORIZED)
+		elif request.user.is_authenticated:
+			if not (request.user.is_staff or request.user.is_superuser):
+				return Response({'error': 'Unauthorized access.'}, status=status.HTTP_401_UNAUTHORIZED)
+		else:
+			return Response({'error': 'Authentication required.'}, status=status.HTTP_401_UNAUTHORIZED)
 
 	if request.method == 'PATCH':
 		new_status = request.data.get('status')
