@@ -1,11 +1,12 @@
 import re
+from datetime import timedelta
 
+from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model, login, logout
 from django.contrib.auth.hashers import check_password, make_password
 from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
-from datetime import timedelta
 from django.views.decorators.csrf import ensure_csrf_cookie
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import AllowAny
@@ -42,14 +43,34 @@ def require_staff(request):
 	return request.user.is_authenticated and request.user.is_staff and not request.user.is_superuser
 
 
+def is_local_demo_request(request):
+	host = request.get_host().split(':', 1)[0].lower()
+	client_ip = request.META.get('REMOTE_ADDR')
+	return (
+		settings.DEBUG
+		and host in {'localhost', '127.0.0.1', 'testserver'}
+		and client_ip in {'127.0.0.1', '::1'}
+	)
+
+
+def is_local_demo_admin(request):
+	return is_local_demo_request(request) and request.session.get('areacare_demo_admin') is True
+
+
 def require_admin(request):
-	return request.user.is_authenticated and request.user.is_superuser
+	return (request.user.is_authenticated and request.user.is_superuser) or is_local_demo_admin(request)
 
 
 @api_view(['GET'])
 @permission_classes([AllowAny])
 @ensure_csrf_cookie
 def auth_session(request):
+	if is_local_demo_admin(request):
+		return Response({
+			'authenticated': True,
+			'role': 'admin',
+			'username': request.session.get('areacare_demo_username', 'Local demo admin'),
+		})
 	if request.user.is_authenticated:
 		role = 'admin' if request.user.is_superuser else 'staff' if request.user.is_staff else None
 		if role:
@@ -85,6 +106,23 @@ def admin_login(request):
 		return Response(
 			{'error': 'Username and password are required.'},
 			status=status.HTTP_400_BAD_REQUEST,
+		)
+
+	if is_local_demo_request(request):
+		logout(request)
+		request.session['areacare_demo_admin'] = True
+		request.session['areacare_demo_username'] = username
+		clear_login_attempts(request, username, 'admin')
+		return Response(
+			{
+				'message': 'Local demo login successful.',
+				'authenticated': True,
+				'role': 'admin',
+				'redirect': '/admin/dashboard',
+				'username': username,
+				'demo_mode': True,
+			},
+			status=status.HTTP_200_OK,
 		)
 
 	is_locked, remaining = check_login_rate_limit(request, username, 'admin')
@@ -196,6 +234,8 @@ def staff_login(request):
 
 	clear_login_attempts(request, login_id, 'staff')
 	request.session.pop('citizen_id', None)
+	request.session.pop('areacare_demo_admin', None)
+	request.session.pop('areacare_demo_username', None)
 	login(request, account)
 	if account.is_superuser:
 		request.session.set_expiry(365 * 24 * 60 * 60)
@@ -532,10 +572,10 @@ def admin_dashboard(request):
 @transaction.atomic
 def complaint_detail(request, complaint_id):
 	if request.method == 'PATCH':
-		if not request.user.is_authenticated:
-			return Response({'error': 'Authentication required.'}, status=status.HTTP_401_UNAUTHORIZED)
-		if request.user.is_superuser:
+		if is_local_demo_admin(request) or request.user.is_superuser:
 			pass
+		elif not request.user.is_authenticated:
+			return Response({'error': 'Authentication required.'}, status=status.HTTP_401_UNAUTHORIZED)
 		elif request.user.is_staff:
 			try:
 				request.user.field_staff_profile
@@ -560,6 +600,8 @@ def complaint_detail(request, complaint_id):
 		if citizen_id:
 			if str(record.User_id) != str(citizen_id):
 				return Response({'error': 'You do not have access to this complaint.'}, status=status.HTTP_401_UNAUTHORIZED)
+		elif is_local_demo_admin(request):
+			pass
 		elif request.user.is_authenticated:
 			if not (request.user.is_staff or request.user.is_superuser):
 				return Response({'error': 'Unauthorized access.'}, status=status.HTTP_401_UNAUTHORIZED)

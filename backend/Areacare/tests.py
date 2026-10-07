@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.urls import reverse
 
 from .models import Address, category, complaint, user
@@ -50,6 +50,52 @@ class AuthenticationFlowTests(TestCase):
 		citizen_response = self.client.post(reverse('citizen-login'), {'email': 'citizen@example.com', 'phone': '9876543210'}, content_type='application/json')
 		self.assertEqual(citizen_response.status_code, 200)
 		self.assertEqual(self.client.get(reverse('auth-session')).json()['role'], 'citizen')
+
+	def test_local_debug_admin_demo_login_accepts_arbitrary_nonempty_credentials(self):
+		response = self.client.post(
+			reverse('admin-login'),
+			{'username': 'anything', 'password': 'anything'},
+			content_type='application/json',
+		)
+
+		self.assertEqual(response.status_code, 200)
+		self.assertTrue(response.json()['demo_mode'])
+		self.assertEqual(response.json()['redirect'], '/admin/dashboard')
+		self.assertEqual(self.client.get(reverse('auth-session')).json()['role'], 'admin')
+		self.assertEqual(self.client.get(reverse('admin-dashboard')).status_code, 200)
+
+		complaint_url = reverse('complaint-detail', args=[f'CP-2026-{self.record.id:04d}'])
+		self.assertEqual(self.client.get(complaint_url).status_code, 200)
+		self.assertEqual(
+			self.client.patch(
+				complaint_url,
+				{'status': 'RESOLVED'},
+				content_type='application/json',
+			).status_code,
+			200,
+		)
+
+	@override_settings(DEBUG=False)
+	def test_arbitrary_admin_credentials_are_rejected_when_debug_is_disabled(self):
+		response = self.client.post(
+			reverse('admin-login'),
+			{'username': 'anything', 'password': 'anything'},
+			content_type='application/json',
+		)
+
+		self.assertEqual(response.status_code, 401)
+		self.assertNotIn('demo_mode', response.json())
+
+	def test_arbitrary_admin_credentials_are_rejected_for_non_local_clients(self):
+		response = self.client.post(
+			reverse('admin-login'),
+			{'username': 'anything', 'password': 'anything'},
+			content_type='application/json',
+			REMOTE_ADDR='203.0.113.1',
+		)
+
+		self.assertEqual(response.status_code, 401)
+		self.assertNotIn('demo_mode', response.json())
 
 	def test_wrong_role_and_unauthenticated_access_are_rejected(self):
 		self.client.post(reverse('staff-login'), {'username': 'roads-staff', 'password': 'Staff-password-123'}, content_type='application/json')
@@ -142,5 +188,3 @@ class AuthenticationFlowTests(TestCase):
 		fifth_res = self.client.post(url, {'username': 'roads-staff', 'password': 'wrong-password'}, content_type='application/json')
 		self.assertEqual(fifth_res.status_code, 429)
 		self.assertTrue(fifth_res.json().get('lockout'))
-
-
