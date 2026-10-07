@@ -330,3 +330,72 @@ body.dark-mode .staff-quick-demo-badge:hover {
     width: 100%;
   }
 }
+
+/* Security Lockout Banner Styles */
+.staff-lockout-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin: 16px 0 24px;
+  padding: 14px 18px;
+  background: #fef2f2;
+  border: 1.5px solid #f87171;
+  border-left: 5px solid #dc2626;
+  border-radius: 8px;
+  color: #991b1b;
+  animation: lockoutFadeIn 0.3s ease-in-out;
+}
+
+.staff-lockout-icon {
+  font-size: 22px;
+  color: #dc2626;
+  margin-top: 2px;
+}
+
+.staff-lockout-content strong {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 3px;
+  color: #991b1b;
+}
+
+.staff-lockout-content p {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: #7f1d1d;
+}
+
+.staff-lockout-timer {
+  display: inline-block;
+  padding: 1px 7px;
+  margin-left: 4px;
+  background: #fee2e2;
+  border: 1px solid #fca5a5;
+  border-radius: 4px;
+  font-weight: 700;
+  font-family: monospace;
+  font-size: 14px;
+  color: #b91c1c;
+}
+
+.open-console-button-locked {
+  background: #94a3b8 !important;
+  border-color: #64748b !important;
+  cursor: not-allowed !important;
+  box-shadow: none !important;
+  opacity: 0.85;
+}
+
+@keyframes lockoutFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+

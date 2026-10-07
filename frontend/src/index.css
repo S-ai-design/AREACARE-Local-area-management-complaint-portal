@@ -54,27 +54,54 @@ body {
   margin: 0;
 }
 
+.theme-toggle:hover { border-color: #ef6547; color: #ef6547; }
+
+/* ── Enlarged navbar ── */
+.areacare-nav { min-height: 73px; padding-top: 0 !important; padding-bottom: 0 !important; }
+.nav-logo-icon { width: 48px; height: 48px; font-size: 20px; flex-shrink: 0; transition: transform .2s; }
+.navbar-brand:hover .nav-logo-icon { transform: rotate(-8deg) scale(1.08); }
+.nav-brand-text { font-size: 20px; letter-spacing: 2px; color: #132943; transition: color .2s; }
+.navbar-brand:hover .nav-brand-text { color: #4f46e5; }
+.areacare-nav-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 10px 18px !important;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #3d5168 !important;
+  letter-spacing: .3px;
+  transition: background .18s, color .18s;
+}
+.areacare-nav-link:hover { background: #f0f4fa; color: #132943 !important; }
+.areacare-nav-link.active, .areacare-nav-link.text-primary { background: #eef2ff; color: #4f46e5 !important; }
+.areacare-nav-link i { font-size: 14px; }
 .theme-toggle {
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  margin: 7px 0 7px 16px;
-  padding: 7px 11px;
+  margin: 7px 0 7px 12px;
+  padding: 9px 15px;
   border: 1px solid #d9e3ed;
-  border-radius: 6px;
+  border-radius: 8px;
   color: #233c57;
   background: #fff;
   font: inherit;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   cursor: pointer;
+  transition: border-color .18s, color .18s;
 }
 
-.theme-toggle:hover { border-color: #ef6547; color: #ef6547; }
 
 body.dark-mode { background: #101827; color: #dce7f2; }
 body.dark-mode .navbar { background: #172235 !important; border-color: #2d3c53 !important; }
 body.dark-mode .navbar-brand, body.dark-mode .nav-link { color: #dce7f2 !important; }
+body.dark-mode .nav-brand-text { color: #dce7f2; }
+body.dark-mode .areacare-nav-link { color: #a9bbcf !important; }
+body.dark-mode .areacare-nav-link:hover { background: #202e43; color: #f3f7fb !important; }
+body.dark-mode .areacare-nav-link.active, body.dark-mode .areacare-nav-link.text-primary { background: #1e2d4a; color: #818cf8 !important; }
 body.dark-mode .nav-link:hover, body.dark-mode .nav-link.active { color: #ffad82 !important; }
 body.dark-mode .theme-toggle { border-color: #40516b; color: #dce7f2; background: #202e43; }
 body.dark-mode .admin-login-page, body.dark-mode .staff-login-page, body.dark-mode .staff-registration-page, body.dark-mode .citizen-page, body.dark-mode .citizen-login-page, body.dark-mode .citizen-track-page, body.dark-mode .staff-detail-page { background: #101827; }
@@ -91,11 +118,11 @@ body.dark-mode .action-queue h1, body.dark-mode .citizen-service-card h3, body.d
 body.dark-mode .ticket-category, body.dark-mode .section-description, body.dark-mode .citizen-service-card p, body.dark-mode .emergency-card small, body.dark-mode .tracked-details p { color: #9cafc2; }
 
 #root {
-  width: 1126px;
-  max-width: 100%;
+  width: 100%;
+  max-width: none;
   margin: 0 auto;
   text-align: center;
-  border-inline: 1px solid var(--border);
+  border-inline: 0;
   min-height: 100svh;
   display: flex;
   flex-direction: column;

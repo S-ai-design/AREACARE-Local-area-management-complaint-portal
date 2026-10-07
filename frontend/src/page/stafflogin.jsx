@@ -3,6 +3,7 @@ import './stafflogin.css'
 import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { apiFetch, ensureCsrfCookie } from '../auth/api'
+import { useLoginLockout } from '../auth/useLoginLockout'
 
 function StaffLogin() {
   const navigate = useNavigate()
@@ -13,6 +14,12 @@ function StaffLogin() {
   const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(() => localStorage.getItem('areacare_staff_remember') === 'true')
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const { isLocked, formattedTime, handleAuthResponse, clearLockout } = useLoginLockout({
+    storageKey: 'areacare_staff_lockout_until',
+    targetRole: 'staff',
+    defaultRedirect: '/staff/dashboard',
+  })
 
   useEffect(() => {
     // Prefetch CSRF cookie asynchronously for fast subsequent submission
@@ -26,7 +33,7 @@ function StaffLogin() {
 
   async function handleSubmit(event) {
     event.preventDefault()
-    if (isSubmitting) return
+    if (isSubmitting || isLocked) return
 
     const trimmedUsername = username.trim()
     if (!trimmedUsername || !password) {
@@ -43,10 +50,12 @@ function StaffLogin() {
         body: JSON.stringify({ username: trimmedUsername, password }),
       })
       const result = await response.json()
-      if (!response.ok) {
-        toast.error(result.error || 'Invalid staff credentials.')
+      const wasErrorHandled = handleAuthResponse(response, result, 'Invalid staff credentials.')
+      if (wasErrorHandled) {
         return
       }
+
+      clearLockout()
 
       if (rememberMe) {
         localStorage.setItem('areacare_staff_username', trimmedUsername)
@@ -57,7 +66,7 @@ function StaffLogin() {
       }
 
       toast.success(result.message || 'Staff login successful.')
-      const redirectPath = location.state?.from || '/staff/dashboard'
+      const redirectPath = result.redirect || location.state?.from || (result.role === 'admin' ? '/admin/dashboard' : '/staff/dashboard')
       navigate(redirectPath, { replace: true })
     } catch (error) {
       toast.error(
@@ -101,6 +110,18 @@ function StaffLogin() {
           <p>Log in to access your assigned work queue, update progress, and upload resolution proof.</p>
         </div>
 
+        {isLocked && (
+          <div className="staff-lockout-banner" role="alert">
+            <div className="staff-lockout-icon">
+              <i className="fa-solid fa-shield-virus" aria-hidden="true" />
+            </div>
+            <div className="staff-lockout-content">
+              <strong>Staff Login Temporarily Suspended</strong>
+              <p>Too many failed attempts detected. Access is temporarily locked. Please try again in <span className="staff-lockout-timer">{formattedTime}</span>.</p>
+            </div>
+          </div>
+        )}
+
         <form className="staff-login-form" onSubmit={handleSubmit}>
           <label htmlFor="staff-username">Staff Username or Email <span>*</span></label>
           <input
@@ -112,7 +133,7 @@ function StaffLogin() {
             onChange={(event) => setUsername(event.target.value)}
             autoComplete="username"
             autoFocus
-            disabled={isSubmitting}
+            disabled={isSubmitting || isLocked}
             required
           />
 
@@ -126,7 +147,7 @@ function StaffLogin() {
               value={password}
               onChange={(event) => setPassword(event.target.value)}
               autoComplete="current-password"
-              disabled={isSubmitting}
+              disabled={isSubmitting || isLocked}
               required
             />
             <button
@@ -136,6 +157,7 @@ function StaffLogin() {
               aria-label={showPassword ? 'Hide password' : 'Show password'}
               title={showPassword ? 'Hide password' : 'Show password'}
               tabIndex="-1"
+              disabled={isLocked}
             >
               <i className={`fa-solid ${showPassword ? 'fa-eye-slash' : 'fa-eye'}`} aria-hidden="true" />
             </button>
@@ -147,7 +169,7 @@ function StaffLogin() {
                 type="checkbox"
                 checked={rememberMe}
                 onChange={(event) => setRememberMe(event.target.checked)}
-                disabled={isSubmitting}
+                disabled={isSubmitting || isLocked}
               />
               <span>Remember username</span>
             </label>
@@ -156,7 +178,7 @@ function StaffLogin() {
               type="button"
               className="staff-quick-demo-badge"
               onClick={handleQuickFillDemo}
-              disabled={isSubmitting}
+              disabled={isSubmitting || isLocked}
               title="Click to auto-fill demo staff credentials"
             >
               <i className="fa-solid fa-wand-magic-sparkles" aria-hidden="true" /> Fill Demo Staff
@@ -167,8 +189,13 @@ function StaffLogin() {
             <p className="staff-demo-account">
               Demo Staff: <strong>roads-staff</strong> / <strong>Staff-password-123</strong>
             </p>
-            <button type="submit" className="open-console-button" disabled={isSubmitting}>
-              {isSubmitting ? (
+            <button type="submit" className={`open-console-button ${isLocked ? 'open-console-button-locked' : ''}`} disabled={isSubmitting || isLocked}>
+              {isLocked ? (
+                <>
+                  <i className="fa-solid fa-lock" aria-hidden="true" />
+                  <span>Locked ({formattedTime})</span>
+                </>
+              ) : isSubmitting ? (
                 <>
                   <i className="fa-solid fa-spinner fa-spin" aria-hidden="true" />
                   <span>Signing in...</span>

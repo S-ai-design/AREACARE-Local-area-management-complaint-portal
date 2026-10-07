@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.core.cache import cache
 from django.test import TestCase
 from django.urls import reverse
 
@@ -7,6 +8,7 @@ from .models import Address, category, complaint, user
 
 class AuthenticationFlowTests(TestCase):
 	def setUp(self):
+		cache.clear()
 		self.admin = get_user_model().objects.create_superuser(
 			username='admin', password='Admin-password-123', email='admin@example.com'
 		)
@@ -87,3 +89,58 @@ class AuthenticationFlowTests(TestCase):
 		}, content_type='application/json')
 		self.assertEqual(login_response.status_code, 200)
 		self.assertEqual(self.client.get(reverse('auth-session')).json()['role'], 'staff')
+
+	def test_admin_login_rate_limiting_and_lockout(self):
+		url = reverse('admin-login')
+		# First 4 failed attempts should return 401 with attempt countdown warnings
+		for attempt in range(1, 5):
+			res = self.client.post(url, {'username': 'admin', 'password': 'wrong-password'}, content_type='application/json')
+			self.assertEqual(res.status_code, 401)
+			self.assertEqual(res.json()['attempts_left'], 5 - attempt)
+
+		# 5th failed attempt should trigger 429 Too Many Requests
+		fifth_res = self.client.post(url, {'username': 'admin', 'password': 'wrong-password'}, content_type='application/json')
+		self.assertEqual(fifth_res.status_code, 429)
+		self.assertTrue(fifth_res.json().get('lockout'))
+		self.assertIn('Retry-After', fifth_res.headers)
+
+		# Subsequent attempts during lockout (even with correct password) must be rejected with 429
+		locked_res = self.client.post(url, {'username': 'admin', 'password': 'Admin-password-123'}, content_type='application/json')
+		self.assertEqual(locked_res.status_code, 429)
+
+	def test_successful_login_clears_failed_attempts(self):
+		url = reverse('admin-login')
+		# Fail 2 times
+		self.client.post(url, {'username': 'admin', 'password': 'wrong-password'}, content_type='application/json')
+		self.client.post(url, {'username': 'admin', 'password': 'wrong-password'}, content_type='application/json')
+
+		# Correct login should succeed and clear attempts
+		success_res = self.client.post(url, {'username': 'admin', 'password': 'Admin-password-123'}, content_type='application/json')
+		self.assertEqual(success_res.status_code, 200)
+
+		# Next failure should have full 4 attempts left (i.e. attempt 1 of 5)
+		next_fail = self.client.post(url, {'username': 'admin', 'password': 'wrong-password'}, content_type='application/json')
+		self.assertEqual(next_fail.status_code, 401)
+		self.assertEqual(next_fail.json()['attempts_left'], 4)
+
+	def test_citizen_login_rate_limiting(self):
+		url = reverse('citizen-login')
+		for _ in range(4):
+			res = self.client.post(url, {'email': 'citizen@example.com', 'phone': '0000000000'}, content_type='application/json')
+			self.assertEqual(res.status_code, 401)
+
+		fifth_res = self.client.post(url, {'email': 'citizen@example.com', 'phone': '0000000000'}, content_type='application/json')
+		self.assertEqual(fifth_res.status_code, 429)
+		self.assertTrue(fifth_res.json().get('lockout'))
+
+	def test_staff_login_rate_limiting(self):
+		url = reverse('staff-login')
+		for _ in range(4):
+			res = self.client.post(url, {'username': 'roads-staff', 'password': 'wrong-password'}, content_type='application/json')
+			self.assertEqual(res.status_code, 401)
+
+		fifth_res = self.client.post(url, {'username': 'roads-staff', 'password': 'wrong-password'}, content_type='application/json')
+		self.assertEqual(fifth_res.status_code, 429)
+		self.assertTrue(fifth_res.json().get('lockout'))
+
+

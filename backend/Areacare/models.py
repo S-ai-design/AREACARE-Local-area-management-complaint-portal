@@ -9,7 +9,8 @@ class TimeStumpedModel(models.Model):
 class user(TimeStumpedModel):
     name = models.CharField(max_length=100)
     email = models.EmailField(max_length=100, unique=True)
-    contact = models.BigIntegerField()
+    contact = models.BigIntegerField(default=0)
+    password = models.CharField(max_length=128, default='')
     is_action = models.BooleanField(default=True)
     def __str__(self):
         return f"{self.name} - {self.email} - {self.contact}"
@@ -26,6 +27,8 @@ class Address(TimeStumpedModel):
     city = models.CharField(max_length=500)
     pincode = models.IntegerField()
     state =models.CharField(max_length=500)
+    latitude = models.FloatField(null=True, blank=True)
+    longitude = models.FloatField(null=True, blank=True)
     is_action = models.BooleanField(default=True)
     def __str__(self):
         return f"{self.area} - {self.road} - {self.city} - {self.pincode} - {self.state}"
@@ -48,9 +51,14 @@ class complaint(TimeStumpedModel):
     Solved_at =  models.DateTimeField (null=True, blank=True)
     decription = models.TextField()
     complaint_title = models.CharField(max_length=100)
+    image = models.ImageField(upload_to='complaint_images/', null=True, blank=True)
     PRIORITY_CHOICES = [('LOW','Low'),('MEDIUM','Medium'),('HIGH','High')]
     priority = models.CharField(max_length=10, choices=PRIORITY_CHOICES, default='MEDIUM')
-    STATUS_CHOICES = [('SUBMITTED', 'Submitted'), ('IN_PROGRESS', 'In Progress'), ('RESOLVED', 'Resolved'), ('CLOSED', 'Closed'), ('REJECTED', 'Rejected')]
+    STATUS_CHOICES = [
+        ('SUBMITTED', 'Submitted'), ('ASSIGNED', 'Assigned'), ('IN_PROGRESS', 'In Progress'),
+        ('UNDER_REVIEW', 'Under Review'), ('ESCALATED', 'Escalated'), ('RESOLVED', 'Resolved'),
+        ('CLOSED', 'Closed'), ('REJECTED', 'Rejected'),
+    ]
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='SUBMITTED')
     worker_name = models.CharField(max_length=100, blank=True, default='')
     worker_phone = models.BigIntegerField(null=True, blank=True)

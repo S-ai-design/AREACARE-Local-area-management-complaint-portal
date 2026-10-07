@@ -14,21 +14,16 @@ const Header = () => {
        return location.pathname === path ? "active text-primary fw-semibold" : "";
     }
   return (
-    <nav className="navbar navbar-expand-lg bg-white border-bottom shadow-sm sticky-top">
-      <div className="container">
+    <nav className="navbar navbar-expand-lg bg-white border-bottom shadow-sm sticky-top areacare-nav">
+      <div className="container-fluid px-4">
         <Link className="navbar-brand d-flex align-items-center gap-2" to="/">
           <span
-            className="rounded-circle d-inline-flex align-items-center justify-content-center gap-2 me-2"
-            style={{
-              backgroundColor: '#4f46e5',
-              color: 'white',
-              width: '36px',
-              height: '36px',
-            }}
+            className="nav-logo-icon rounded-circle d-inline-flex align-items-center justify-content-center"
+            style={{ backgroundColor: '#4f46e5', color: 'white' }}
           >
-            <i className="fa-solid fa-comment-dots" aria-hidden="true"></i>
+            <i className="fa-solid fa-comment-dots" aria-hidden="true" />
           </span>
-          <span className="fw-bold">AREACARE</span>
+          <span className="nav-brand-text fw-bold">AREACARE</span>
         </Link>
 
         <button
@@ -40,42 +35,41 @@ const Header = () => {
           aria-expanded="false"
           aria-label="Toggle navigation"
         >
-          <span className="navbar-toggler-icon"></span>
+          <span className="navbar-toggler-icon" />
         </button>
 
         <div className="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul className="navbar-nav ms-auto mb-2 mb-lg-0">
+          <ul className="navbar-nav ms-auto mb-2 mb-lg-0 align-items-lg-center gap-lg-1">
             <li className="nav-item">
-              <Link className= {`nav-link  ${isActive('/')}`} to="/">
-                Home
-                <i className="fa-solid fa-home me-1"></i>
+              <Link className={`nav-link areacare-nav-link ${isActive('/')}`} to="/">
+                <i className="fa-solid fa-house" aria-hidden="true" /> Home
               </Link>
             </li>
             <li className="nav-item">
-              <Link className= {`nav-link  ${isActive('/citizen/login')}`} to="/citizen/login">
-                Citizen
-                
-                <i className="fa-solid fa-user me-1"></i>
-
+              <Link className={`nav-link areacare-nav-link ${isActive('/citizen/login')}`} to="/citizen/login">
+                <i className="fa-solid fa-user" aria-hidden="true" /> Citizen
               </Link>
             </li>
-             <li className="nav-item">
-              <Link className= {`nav-link  ${isActive('/stafflogin')}`} to="/stafflogin">
-                Staff Login
-                <i className="fa-solid fa-user me-1" > </i>
-                
+            <li className="nav-item">
+              <Link className={`nav-link areacare-nav-link ${isActive('/stafflogin')}`} to="/stafflogin">
+                <i className="fa-solid fa-id-badge" aria-hidden="true" /> Staff Login
               </Link>
             </li>
-             <li className="nav-item">
-              <Link className= {`nav-link  ${isActive('/adminlogin')}`} to="/adminlogin">
-                Admin login
-                 <i className="fa-solid fa-shield-alt me-1"></i>
-                
+            <li className="nav-item">
+              <Link className={`nav-link areacare-nav-link ${isActive('/adminlogin')}`} to="/adminlogin">
+                <i className="fa-solid fa-shield-alt" aria-hidden="true" /> Admin Login
               </Link>
             </li>
           </ul>
         </div>
-        <button className="theme-toggle" type="button" onClick={() => setIsDarkMode((currentMode) => !currentMode)} aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'} title={isDarkMode ? 'Light mode' : 'Dark mode'}>
+
+        <button
+          className="theme-toggle"
+          type="button"
+          onClick={() => setIsDarkMode((m) => !m)}
+          aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+          title={isDarkMode ? 'Light mode' : 'Dark mode'}
+        >
           <i className={`fa-solid ${isDarkMode ? 'fa-sun' : 'fa-moon'}`} aria-hidden="true" />
           <span>{isDarkMode ? 'Light' : 'Dark'}</span>
         </button>

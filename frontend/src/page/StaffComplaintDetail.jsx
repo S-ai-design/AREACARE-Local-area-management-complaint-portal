@@ -1,11 +1,8 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { toast } from 'react-toastify'
+import { apiFetch } from '../auth/api'
 import './StaffComplaintDetail.css'
-
-function getCsrfToken() {
-  return document.cookie.split('; ').find((cookie) => cookie.startsWith('csrftoken='))?.split('=')[1] || ''
-}
 
 function StaffComplaintDetail() {
   const { complaintId } = useParams()
@@ -18,8 +15,7 @@ function StaffComplaintDetail() {
   useEffect(() => {
     async function loadComplaint() {
       try {
-        const apiHost = window.location.hostname || '127.0.0.1'
-        const response = await fetch(`http://${apiHost}:8000/api/complaints/${encodeURIComponent(complaintId)}/`, { credentials: 'include' })
+        const response = await apiFetch(`/api/complaints/${encodeURIComponent(complaintId)}/`)
         const result = await response.json()
         if (!response.ok) {
           toast.error(result.error || 'Complaint not found.')
@@ -41,10 +37,9 @@ function StaffComplaintDetail() {
   async function updateStatus(newStatus) {
     setIsUpdating(true)
     try {
-      const apiHost = window.location.hostname || '127.0.0.1'
-      const response = await fetch(`http://${apiHost}:8000/api/complaints/${encodeURIComponent(complaintId)}/`, {
-        method: 'PATCH', credentials: 'include',
-        headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+      const response = await apiFetch(`/api/complaints/${encodeURIComponent(complaintId)}/`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ status: newStatus }),
       })
       const result = await response.json()
@@ -65,9 +60,9 @@ function StaffComplaintDetail() {
     event.preventDefault()
     setIsUpdating(true)
     try {
-      const apiHost = window.location.hostname || '127.0.0.1'
-      const response = await fetch(`http://${apiHost}:8000/api/complaints/${encodeURIComponent(complaintId)}/`, {
-        method: 'PATCH', credentials: 'include', headers: { 'Content-Type': 'application/json', 'X-CSRFToken': getCsrfToken() },
+      const response = await apiFetch(`/api/complaints/${encodeURIComponent(complaintId)}/`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ worker_name: workerName, worker_phone: workerPhone }),
       })
       const result = await response.json()

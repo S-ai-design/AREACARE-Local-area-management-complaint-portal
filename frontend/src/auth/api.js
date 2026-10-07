@@ -1,4 +1,6 @@
-const defaultApiBase = `${window.location.protocol}//${window.location.hostname}:8000`
+const defaultApiBase = import.meta.env.DEV
+  ? ''
+  : `${window.location.protocol}//${window.location.hostname}:8000`
 
 export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || defaultApiBase
 

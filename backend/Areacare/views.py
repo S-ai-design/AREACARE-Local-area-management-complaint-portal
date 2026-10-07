@@ -1,6 +1,7 @@
 import re
 
 from django.contrib.auth import authenticate, get_user_model, login, logout
+from django.contrib.auth.hashers import check_password, make_password
 from django.db import transaction
 from django.db.models import Count, Q
 from django.utils import timezone
@@ -11,6 +12,13 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework import status
 from .models import Address, AdminNotification, ComplaintHistory, FieldStaff, category, complaint, user
+from .rate_limit import (
+	check_login_rate_limit,
+	clear_login_attempts,
+	failed_attempt_response,
+	lockout_response,
+	record_failed_attempt,
+)
 
 SLA_HOURS = {'LOW': 120, 'MEDIUM': 72, 'HIGH': 24}
 
@@ -63,10 +71,13 @@ def auth_logout(request):
 	return Response({'message': 'Signed out successfully.'}, status=status.HTTP_200_OK)
 
 
-@api_view(['POST'])
+@api_view(['GET', 'POST'])
 @permission_classes([AllowAny])
 @ensure_csrf_cookie
 def admin_login(request):
+	if request.method == 'GET':
+		# GET is used only to set the CSRF cookie; return 200
+		return Response({'detail': 'CSRF cookie set.'}, status=status.HTTP_200_OK)
 	username = str(request.data.get('username', '')).strip()
 	password = request.data.get('password', '')
 
@@ -76,26 +87,52 @@ def admin_login(request):
 			status=status.HTTP_400_BAD_REQUEST,
 		)
 
-	user = authenticate(request, username=username, password=password)
-	if user is None and '@' in username:
+	is_locked, remaining = check_login_rate_limit(request, username, 'admin')
+	if is_locked:
+		return lockout_response(remaining)
+
+	account = authenticate(request, username=username, password=password)
+	if account is None:
 		from django.contrib.auth import get_user_model
-
-		account = get_user_model().objects.filter(email__iexact=username).first()
-		if account is not None:
-			user = authenticate(request, username=account.get_username(), password=password)
-
-	if user is None or not user.is_superuser:
-		return Response(
-			{'error': 'Invalid superuser credentials.'},
-			status=status.HTTP_401_UNAUTHORIZED,
+		account_obj = (
+			get_user_model().objects.filter(username__iexact=username, is_active=True).first()
+			or get_user_model().objects.filter(email__iexact=username, is_active=True).first()
 		)
+		if account_obj is not None:
+			account = authenticate(request, username=account_obj.get_username(), password=password)
 
+	if account is None or not (account.is_superuser or account.is_staff):
+		is_locked, remaining, attempts_left = record_failed_attempt(request, username, 'admin')
+		if is_locked:
+			return lockout_response(remaining)
+		return failed_attempt_response(attempts_left, 'Invalid credentials.')
+
+	clear_login_attempts(request, username, 'admin')
 	request.session.pop('citizen_id', None)
-	login(request, user)
-	return Response(
-		{'message': 'Admin login successful.'},
-		status=status.HTTP_200_OK,
-	)
+	login(request, account)
+	if account.is_superuser:
+		request.session.set_expiry(365 * 24 * 60 * 60)  # 1 year — admin stays logged in indefinitely
+		return Response(
+			{
+				'message': 'Admin login successful.',
+				'authenticated': True,
+				'role': 'admin',
+				'redirect': '/admin/dashboard',
+				'username': account.get_username(),
+			},
+			status=status.HTTP_200_OK,
+		)
+	else:
+		return Response(
+			{
+				'message': 'Staff login successful. Redirecting to staff dashboard...',
+				'authenticated': True,
+				'role': 'staff',
+				'redirect': '/staff/dashboard',
+				'username': account.get_username(),
+			},
+			status=status.HTTP_200_OK,
+		)
 
 
 @api_view(['POST'])
@@ -137,83 +174,145 @@ def staff_login(request):
 	if not login_id or not isinstance(password, str) or not password:
 		return Response({'error': 'Username/email and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
 
+	is_locked, remaining = check_login_rate_limit(request, login_id, 'staff')
+	if is_locked:
+		return lockout_response(remaining)
+
 	account = authenticate(request, username=login_id, password=password)
-	if account is None and '@' in login_id:
-		account = get_user_model().objects.filter(email__iexact=login_id, is_active=True).first()
-		if account is not None:
-			account = authenticate(request, username=account.get_username(), password=password)
-	if account is None or not account.is_staff or account.is_superuser:
-		return Response({'error': 'Invalid staff credentials.'}, status=status.HTTP_401_UNAUTHORIZED)
+	if account is None:
+		from django.contrib.auth import get_user_model
+		account_obj = (
+			get_user_model().objects.filter(username__iexact=login_id, is_active=True).first()
+			or get_user_model().objects.filter(email__iexact=login_id, is_active=True).first()
+		)
+		if account_obj is not None:
+			account = authenticate(request, username=account_obj.get_username(), password=password)
+
+	if account is None or not (account.is_staff or account.is_superuser):
+		is_locked, remaining, attempts_left = record_failed_attempt(request, login_id, 'staff')
+		if is_locked:
+			return lockout_response(remaining)
+		return failed_attempt_response(attempts_left, 'Invalid staff credentials.')
+
+	clear_login_attempts(request, login_id, 'staff')
 	request.session.pop('citizen_id', None)
 	login(request, account)
-	return Response({'message': 'Staff login successful.', 'username': account.get_username()}, status=status.HTTP_200_OK)
+	if account.is_superuser:
+		request.session.set_expiry(365 * 24 * 60 * 60)
+		return Response(
+			{
+				'message': 'Admin login successful. Redirecting to admin dashboard...',
+				'authenticated': True,
+				'role': 'admin',
+				'redirect': '/admin/dashboard',
+				'username': account.get_username(),
+			},
+			status=status.HTTP_200_OK,
+		)
+	return Response(
+		{
+			'message': 'Staff login successful.',
+			'authenticated': True,
+			'role': 'staff',
+			'redirect': '/staff/dashboard',
+			'username': account.get_username(),
+		},
+		status=status.HTTP_200_OK,
+	)
 
 
 @api_view(['POST'])
 @permission_classes([AllowAny])
+@ensure_csrf_cookie
 def create_complaint(request):
 	data = request.data
 	required_fields = [
 		'title', 'category', 'area', 'road', 'city', 'pincode',
-		'state', 'description', 'name', 'phone',
+		'state', 'description', 'name', 'email', 'password',
 	]
 	missing_fields = [field for field in required_fields if not str(data.get(field, '')).strip()]
 	if missing_fields:
 		return Response(
-			{'error': 'Required fields are missing.', 'fields': missing_fields},
+			{'error': f'Required fields are missing: {", ".join(missing_fields)}.'},
 			status=status.HTTP_400_BAD_REQUEST,
 		)
+
+	pincode_raw = re.sub(r'\D', '', str(data.get('pincode', '')))
+	if not pincode_raw:
+		return Response({'error': 'Pincode must contain valid numbers.'}, status=status.HTTP_400_BAD_REQUEST)
+	pincode = int(pincode_raw)
+
+	lat_val = data.get('latitude')
+	lon_val = data.get('longitude')
+	try:
+		latitude = float(lat_val) if lat_val not in (None, '', 'null', 'undefined') else None
+	except (ValueError, TypeError):
+		latitude = None
 
 	try:
-		pincode = int(data['pincode'])
-		phone_digits = re.sub(r'\D', '', str(data['phone']))
-		if not phone_digits:
-			raise ValueError
-		contact = int(phone_digits)
-	except (TypeError, ValueError):
-		return Response(
-			{'error': 'Pincode and phone number must contain only numbers.'},
-			status=status.HTTP_400_BAD_REQUEST,
-		)
+		longitude = float(lon_val) if lon_val not in (None, '', 'null', 'undefined') else None
+	except (ValueError, TypeError):
+		longitude = None
+
+	password = str(data.get('password', '')).strip()
+	if not password:
+		return Response({'error': 'Password is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
 	priority = {'normal': 'MEDIUM', 'high': 'HIGH', 'critical': 'HIGH'}.get(
-		data.get('urgency', 'normal'), 'MEDIUM'
+		str(data.get('urgency', 'normal')).lower(), 'MEDIUM'
 	)
+
+	image_file = request.FILES.get('image')
 
 	try:
 		with transaction.atomic():
-			citizen, created = user.objects.get_or_create(
-				email=data['email'].strip() if data.get('email') else f'{contact}@citizen.local',
-				defaults={'name': data['name'].strip(), 'contact': contact},
-			)
-			if not created:
-				citizen.name = data['name'].strip()
-				citizen.contact = contact
-				citizen.save(update_fields=['name', 'contact', 'updated_at'])
+			email_clean = str(data['email']).strip().lower()
+			name_clean = str(data['name']).strip()
+			citizen = user.objects.filter(email__iexact=email_clean).first()
+			if citizen is None:
+				citizen = user.objects.create(
+					email=email_clean,
+					name=name_clean,
+					password=make_password(password),
+					is_action=True,
+				)
+			else:
+				citizen.name = name_clean
+				citizen.password = make_password(password)
+				citizen.save(update_fields=['name', 'password', 'updated_at'])
 
+			cat_name = str(data['category']).strip().lower()
 			complaint_category, _ = category.objects.get_or_create(
-				catego=data['category'].strip()
+				catego=cat_name,
+				defaults={'is_action': True}
 			)
+
 			address = Address.objects.create(
-				area=data['area'].strip(),
-				road=data['road'].strip(),
-				city=data['city'].strip(),
+				area=str(data['area']).strip(),
+				road=str(data['road']).strip(),
+				city=str(data['city']).strip(),
 				pincode=pincode,
-				state=data['state'].strip(),
+				state=str(data['state']).strip(),
+				latitude=latitude,
+				longitude=longitude,
+				is_action=True,
 			)
+
 			record = complaint.objects.create(
 				User=citizen,
 				Category=complaint_category,
 				Address=address,
-				complaint_title=data['title'].strip(),
-				decription=data['description'].strip(),
+				complaint_title=str(data['title']).strip(),
+				decription=str(data['description']).strip(),
 				priority=priority,
-				sla_due_at=timezone.now() + timedelta(hours=SLA_HOURS[priority]),
+				sla_due_at=timezone.now() + timedelta(hours=SLA_HOURS.get(priority, 72)),
+				image=image_file if image_file else None,
+				is_action=True,
 			)
 			record_history(record, 'SUBMITTED', details={'source': 'citizen'})
-	except Exception:
+	except Exception as exc:
 		return Response(
-			{'error': 'The complaint could not be saved.'},
+			{'error': f'The complaint could not be saved: {str(exc)}'},
 			status=status.HTTP_500_INTERNAL_SERVER_ERROR,
 		)
 
@@ -231,15 +330,29 @@ def create_complaint(request):
 @ensure_csrf_cookie
 def citizen_login(request):
 	email = str(request.data.get('email', '')).strip()
+	password = str(request.data.get('password', ''))
 	phone_digits = re.sub(r'\D', '', str(request.data.get('phone', '')))
-	if not email or not phone_digits:
-		return Response({'error': 'Email and phone number are required.'}, status=status.HTTP_400_BAD_REQUEST)
+	if not email or (not password and not phone_digits):
+		return Response({'error': 'Email and password are required.'}, status=status.HTTP_400_BAD_REQUEST)
+
+	ident = f'{email}:password'
+	is_locked, remaining = check_login_rate_limit(request, ident, 'citizen')
+	if is_locked:
+		return lockout_response(remaining)
 
 	try:
-		citizen = user.objects.get(email__iexact=email, contact=int(phone_digits), is_action=True)
+		citizen = user.objects.get(email__iexact=email, is_action=True)
+		if password and not check_password(password, citizen.password):
+			raise user.DoesNotExist
+		if not password and citizen.contact != int(phone_digits):
+			raise user.DoesNotExist
 	except (user.DoesNotExist, ValueError):
-		return Response({'error': 'No citizen account matches these details.'}, status=status.HTTP_401_UNAUTHORIZED)
+		is_locked, remaining, attempts_left = record_failed_attempt(request, ident, 'citizen')
+		if is_locked:
+			return lockout_response(remaining)
+		return failed_attempt_response(attempts_left, 'No citizen account matches these details.')
 
+	clear_login_attempts(request, ident, 'citizen')
 	logout(request)
 	request.session['citizen_id'] = citizen.id
 	request.session.set_expiry(60 * 60 * 24)
@@ -247,33 +360,62 @@ def citizen_login(request):
 
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
+@ensure_csrf_cookie
 def list_complaints(request):
-	if not request.user.is_authenticated or not request.user.is_staff or request.user.is_superuser:
+	if not request.user.is_authenticated or not (request.user.is_staff or request.user.is_superuser):
 		return Response({'error': 'Staff authorization required.'}, status=status.HTTP_401_UNAUTHORIZED)
 
-	try:
-		staff_profile = request.user.field_staff_profile
-	except FieldStaff.DoesNotExist:
-		return Response({'error': 'Staff profile not found.'}, status=status.HTTP_403_FORBIDDEN)
+	staff_profile = None
+	if request.user.is_staff and not request.user.is_superuser:
+		try:
+			staff_profile = request.user.field_staff_profile
+		except FieldStaff.DoesNotExist:
+			staff_profile = None
 
-	category_terms = department_category_terms(staff_profile.department)
-	records = complaint.objects.select_related('User', 'Category', 'Address').filter(
-		Category__catego__iregex='|'.join(category_terms)
-	).order_by('-created_at')
+	filter_dept = request.query_params.get('department', '').strip()
+	show_all = request.query_params.get('all') == '1' or request.user.is_superuser or not staff_profile or (filter_dept.lower() == 'all')
+
+	records = complaint.objects.select_related('User', 'Category', 'Address').all()
+
+	if not show_all and staff_profile:
+		dept_to_filter = filter_dept if filter_dept else staff_profile.department
+		category_terms = department_category_terms(dept_to_filter)
+		records = records.filter(Category__catego__iregex='|'.join(category_terms))
+
+	records = records.order_by('-created_at')
 	complaints = [
 		{
 			'id': f'CP-{record.created_at.year}-{record.id:04d}',
 			'title': record.complaint_title,
-			'category': record.Category.catego,
-			'detail': 'Citizen complaint',
-			'ward': record.Address.city,
+			'category': record.Category.catego if record.Category else 'General',
+			'detail': record.decription or 'Citizen complaint',
+			'ward': record.Address.city if record.Address else '-',
+			'location': f'{record.Address.area}, {record.Address.road}, {record.Address.city}' if record.Address else '-',
 			'priority': record.priority,
 			'status': record.status,
 			'upvotes': 0,
+			'assigned_staff': record.worker_name or 'Unassigned',
+			'worker_name': record.worker_name or '',
+			'worker_phone': str(record.worker_phone) if record.worker_phone else '',
+			'complainant': record.User.name if record.User else 'Citizen',
+			'contact': str(record.User.contact) if record.User else '',
+			'created_at': record.created_at.strftime('%d %b %Y, %I:%M %p'),
+			'expected_resolution': record.sla_due_at.strftime('%d %b %Y, %I:%M %p') if record.sla_due_at else None,
+			'image': record.image.url if record.image else None,
 		}
 		for record in records
 	]
-	return Response({'complaints': complaints}, status=status.HTTP_200_OK)
+	return Response({
+		'complaints': complaints,
+		'total': len(complaints),
+		'staff_info': {
+			'username': request.user.get_username(),
+			'name': request.user.get_full_name() or (staff_profile.full_name if staff_profile else request.user.get_username()),
+			'department': staff_profile.department if staff_profile else ('All Departments' if request.user.is_superuser else 'General'),
+			'is_admin': request.user.is_superuser,
+		}
+	}, status=status.HTTP_200_OK)
 
 
 def complaint_payload(record):
@@ -301,6 +443,7 @@ def complaint_payload(record):
 
 
 @api_view(['GET'])
+@permission_classes([AllowAny])
 @ensure_csrf_cookie
 def admin_dashboard(request):
 	if not require_admin(request):
@@ -334,7 +477,7 @@ def admin_dashboard(request):
 	if date_to:
 		records = records.filter(created_at__date__lte=date_to)
 	if overdue_filter:
-		records = records.filter(status__in=('SUBMITTED', 'IN_PROGRESS'), sla_due_at__isnull=False, sla_due_at__lte=timezone.now())
+		records = records.filter(status__in=('SUBMITTED', 'ASSIGNED', 'IN_PROGRESS', 'UNDER_REVIEW', 'ESCALATED'), sla_due_at__isnull=False, sla_due_at__lte=timezone.now())
 
 	allowed_sorts = {'created_at', '-created_at', 'updated_at', '-updated_at', 'sla_due_at', '-sla_due_at', 'priority', '-priority'}
 	rows = [complaint_payload(record) for record in records.order_by(sort if sort in allowed_sorts else '-created_at')]
@@ -353,7 +496,7 @@ def admin_dashboard(request):
 	staff_data = []
 	for staff in get_user_model().objects.filter(is_staff=True, is_superuser=False).order_by('first_name', 'username'):
 		staff_records = all_records.filter(worker_name__iexact=staff.get_full_name() or staff.username)
-		staff_overdue = staff_records.filter(status__in=('SUBMITTED', 'IN_PROGRESS'), sla_due_at__isnull=False, sla_due_at__lte=now)
+		staff_overdue = staff_records.filter(status__in=('SUBMITTED', 'ASSIGNED', 'IN_PROGRESS', 'UNDER_REVIEW', 'ESCALATED'), sla_due_at__isnull=False, sla_due_at__lte=now)
 		staff_data.append({
 			'name': staff.get_full_name() or staff.username,
 			'total': staff_records.count(),
@@ -401,17 +544,10 @@ def complaint_detail(request, complaint_id):
 		try:
 			staff_profile = request.user.field_staff_profile
 		except FieldStaff.DoesNotExist:
-			return Response({'error': 'Staff profile not found.'}, status=status.HTTP_403_FORBIDDEN)
-		category_terms = department_category_terms(staff_profile.department)
-		if not any(term in record.Category.catego.lower() for term in category_terms):
-			return Response({'error': 'This complaint belongs to another department.'}, status=status.HTTP_403_FORBIDDEN)
+			staff_profile = None
 	if request.method == 'GET':
-		if require_admin(request) or require_staff(request):
-			pass
-		elif request.session.get('citizen_id') == record.User_id:
-			pass
-		else:
-			return Response({'error': 'Authentication required.'}, status=status.HTTP_401_UNAUTHORIZED)
+		# Allow viewing complaint details for citizen tracking, staff, and admin
+		pass
 
 	if request.method == 'PATCH':
 		new_status = request.data.get('status')
@@ -436,8 +572,6 @@ def complaint_detail(request, complaint_id):
 			phone_digits = re.sub(r'\D', '', str(worker_phone))
 			record.worker_phone = int(phone_digits) if phone_digits else None
 		if new_status == 'RESOLVED':
-			from django.utils import timezone
-
 			record.Solved_at = timezone.now()
 		elif new_status is not None:
 			record.Solved_at = None

@@ -1,21 +1,44 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './CitizenTrack.css'
-import { Link } from 'react-router-dom'
+import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
+import { apiFetch } from '../auth/api'
+
+async function handleUnauthorized(reference, errorMessage, navigate) {
+  try {
+    const response = await apiFetch('/api/auth/session/')
+    const session = await response.json()
+    if (response.ok && session.authenticated) {
+      const message = errorMessage === 'Authentication required.'
+        ? 'This complaint is not linked to the signed-in account. Sign in with the account used to submit it.'
+        : errorMessage || 'This complaint is not linked to the signed-in account.'
+      toast.error(message)
+      return true
+    }
+  } catch {
+    // Continue to sign-in if the session cannot be checked.
+  }
+  navigate('/citizen/login', {
+    state: { from: '/citizen/track', complaintId: reference },
+  })
+  return false
+}
 
 function CitizenTrack() {
-  const [complaintId, setComplaintId] = useState('')
+  const location = useLocation()
+  const navigate = useNavigate()
+  const [complaintId, setComplaintId] = useState(() => location.state?.complaintId || '')
   const [complaint, setComplaint] = useState(null)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(() => Boolean(location.state?.complaintId))
 
-  async function handleSubmit(event) {
-    event.preventDefault()
-    setComplaint(null)
-    setIsLoading(true)
-
+  async function loadComplaint(reference) {
     try {
-      const response = await fetch(`http://127.0.0.1:8000/api/complaints/${encodeURIComponent(complaintId.trim())}/`, { credentials: 'include' })
+      const response = await apiFetch(`/api/complaints/${encodeURIComponent(reference)}/`)
       const result = await response.json()
+      if (response.status === 401) {
+        await handleUnauthorized(reference, result.error, navigate)
+        return
+      }
       if (!response.ok) {
         toast.error(result.error || 'Complaint not found.')
         return
@@ -26,6 +49,45 @@ function CitizenTrack() {
     } finally {
       setIsLoading(false)
     }
+  }
+
+  useEffect(() => {
+    const pendingComplaintId = location.state?.complaintId
+    if (!pendingComplaintId) return
+
+    let cancelled = false
+    apiFetch(`/api/complaints/${encodeURIComponent(pendingComplaintId)}/`)
+      .then(async (response) => ({ response, result: await response.json() }))
+      .then(async ({ response, result }) => {
+        if (cancelled) return
+        if (response.status === 401) {
+          const isAuthenticated = await handleUnauthorized(pendingComplaintId, result.error, navigate)
+          if (isAuthenticated && !cancelled) setIsLoading(false)
+          return
+        }
+        if (!response.ok) {
+          toast.error(result.error || 'Complaint not found.')
+        } else {
+          setComplaint(result)
+        }
+        setIsLoading(false)
+        navigate(location.pathname, { replace: true, state: null })
+      })
+      .catch(() => {
+        if (!cancelled) {
+          toast.error('Unable to connect to the complaint server.')
+          setIsLoading(false)
+        }
+      })
+
+    return () => { cancelled = true }
+  }, [location.pathname, location.state, navigate])
+
+  function handleSubmit(event) {
+    event.preventDefault()
+    setComplaint(null)
+    setIsLoading(true)
+    loadComplaint(complaintId.trim())
   }
 
   return (
