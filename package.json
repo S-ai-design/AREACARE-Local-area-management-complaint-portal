@@ -1,5 +1,6 @@
 {
   "scripts": {
+    "prestart": "npm install --prefix frontend",
     "start": "npm --prefix frontend run dev -- --host 0.0.0.0",
     "build": "npm --prefix frontend run build"
   },
